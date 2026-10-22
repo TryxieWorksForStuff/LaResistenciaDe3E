@@ -1,0 +1,198 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>La Resistencia del 3.ºE</title><link rel="manifest" href="manifest.webmanifest"><meta name="theme-color" content="#0e4a36"><link rel="icon" href="icon.svg"><link rel="apple-touch-icon" href="icon.svg">
+<style>
+:root{--bg:#eef2e8;--ink:#10221b;--board:#0e4a36;--cu:#c8793a;--led:#b8f03c;--card:#fff;--mut:#51655b;--bad:#b3261e;--ok:#17653f;--line:#cfd9c9}
+*{box-sizing:border-box}html,body{margin:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font:17px/1.5 "Avenir Next","Segoe UI",system-ui,sans-serif;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+h1,h2,h3{font-family:"Trebuchet MS",system-ui,sans-serif;line-height:1.2;margin:.2em 0 .5em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;min-height:44px;border:2px solid var(--board);background:#fff;border-radius:14px;padding:.5em 1em;text-align:left}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--cu);outline-offset:2px}
+.btn{background:var(--board);color:#fff;text-align:center;font-weight:700;box-shadow:0 4px 0 #082b1f}.btn:disabled{opacity:.5}.btn.sec{background:#fff;color:var(--board);box-shadow:0 4px 0 var(--line)}
+header.top{background:var(--board);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px;padding-top:calc(12px + env(safe-area-inset-top))}
+header.top img{width:36px;height:36px}header.top b{font:700 1.05rem "Trebuchet MS",sans-serif}
+header.top .stat{margin-left:auto;display:flex;gap:12px;font-weight:700}
+main{max-width:760px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:2px solid var(--line);border-radius:20px;padding:16px;margin:0 0 14px}
+.card.pcb{border-left:8px solid var(--cu)}
+nav.tabs{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:2px solid var(--line);display:flex;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav.tabs a{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.8rem;text-decoration:none;color:var(--mut);font-weight:600}
+nav.tabs a[aria-current=page]{color:var(--board);box-shadow:inset 0 3px 0 var(--led)}nav.tabs span{font-size:1.3rem}
+@media(min-width:860px){body{padding:0 0 0 190px}nav.tabs{top:0;right:auto;width:190px;flex-direction:column;justify-content:flex-start;padding-top:90px;border-top:0;border-right:2px solid var(--line)}nav.tabs a{flex:none;flex-direction:row;gap:10px;justify-content:flex-start;padding:0 18px;font-size:1rem}header.top{margin-left:-190px;padding-left:206px}}
+.bar{height:12px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--led);border-right:3px solid var(--board);transition:width .3s}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.map{display:flex;flex-direction:column;align-items:center;gap:14px;padding:10px 0}
+.node{width:76px;height:76px;border-radius:50%;text-align:center;padding:0;font-size:1.6rem;border-width:4px;position:relative}
+.node.done{background:var(--led)}.node.open{background:var(--board);color:#fff;box-shadow:0 0 0 6px rgba(184,240,60,.5)}.node.lock{background:#dde3d9;border-color:#b5beb0;color:#7b877f}
+.node small{display:block;font-size:.65rem;line-height:1}
+.unit{background:var(--board);color:#fff;border-radius:16px;padding:10px 14px;width:100%}
+.opt{display:block;width:100%;margin:8px 0}.opt.sel{background:#e3f6b8;border-color:var(--cu)}
+.opt.good{background:#d7f0dd;border-color:var(--ok)}.opt.wrong{background:#f8dcd9;border-color:var(--bad)}
+.chip{display:inline-block;margin:4px;min-width:44px}
+.fb{border-radius:16px;padding:12px 14px;margin:12px 0;font-weight:600}.fb.good{background:#d7f0dd;color:#0d4a2b}.fb.wrong{background:#f8dcd9;color:#7a1510}
+input[type=text],input[type=password],select,textarea{width:100%;min-height:48px;padding:.5em .8em;border:2px solid var(--board);border-radius:12px;background:#fff;margin:6px 0}
+textarea{min-height:280px;font:13px/1.4 ui-monospace,monospace}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));background:var(--ink);color:#fff;padding:12px 16px;border-radius:14px;z-index:9}
+.off{background:var(--cu);color:#fff;text-align:center;padding:6px;font-weight:700}
+.muted{color:var(--mut)}.big{font:800 2rem "Trebuchet MS",sans-serif}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style></head><body>
+<div id="off" class="off" hidden role="status">Sin conexión: tus resultados se guardan aquí y se enviarán al volver.</div>
+<header class="top"><img src="icon.svg" alt=""><b>La Resistencia del 3.ºE</b><span class="stat" id="hs"></span></header>
+<main id="app" tabindex="-1"><p>Cargando…</p></main>
+<nav class="tabs" id="nav" aria-label="Principal"></nav>
+<script type="module">
+// ==== CONFIGURACIÓN (clave anon/public de Supabase; vacío = modo local) ====
+const CFG={url:"",key:""};
+let sb=null;
+try{if(CFG.url){const m=await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm");sb=m.createClient(CFG.url,CFG.key)}}catch(e){}
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const today=()=>new Date().toLocaleDateString("sv"),yest=()=>new Date(Date.now()-864e5).toLocaleDateString("sv");
+const LS=(k,v)=>{try{if(v===undefined)return JSON.parse(localStorage.getItem(k));localStorage.setItem(k,JSON.stringify(v))}catch{return null}};
+const DEMO={id:"electronica",title:"Taller de Electrónica",icon:"⚡",desc:"CONTENIDO DE DEMOSTRACIÓN. Edítalo desde Admin para que coincida con tus apuntes.",units:[
+{title:"Unidad 1 · Fundamentos",lessons:[
+{id:"e1",title:"Componentes básicos",questions:[
+{t:"mc",q:"¿Qué componente limita el paso de la corriente?",o:["Resistencia","LED","Interruptor"],a:0,e:"La resistencia se opone al paso de la corriente y se mide en ohmios (Ω)."},
+{t:"tf",q:"Un LED funciona igual conectado en cualquier sentido.",a:false,e:"El LED es un diodo: solo conduce con la polaridad correcta (ánodo +, cátodo −)."},
+{t:"match",q:"Relaciona cada componente con su función.",p:[["Resistencia","Limita corriente"],["Interruptor","Abre o cierra el circuito"],["Pila","Da energía"]],e:"Cada componente cumple un papel distinto en el circuito."}]},
+{id:"e2",title:"Voltaje, corriente y resistencia",questions:[
+{t:"mc",q:"¿En qué unidad se mide la corriente eléctrica?",o:["Voltios","Amperios","Ohmios"],a:1,e:"Corriente: amperios (A). Voltaje: voltios (V). Resistencia: ohmios (Ω)."},
+{t:"fill",q:"El voltaje se mide en ____.",a:["voltios","volts","v"],e:"El voltaje (diferencia de potencial) se mide en voltios."},
+{t:"order",q:"Ordena de menor a mayor: 1 kΩ, 1 MΩ, 1 Ω",o:["1 Ω","1 kΩ","1 MΩ"],e:"Ω < kΩ (mil) < MΩ (un millón)."}]}]},
+{title:"Unidad 2 · Ley de Ohm",lessons:[
+{id:"e3",title:"Ley de Ohm",questions:[
+{t:"mc",q:"¿Cuál es la fórmula de la Ley de Ohm?",o:["V = I × R","V = I + R","R = V × I"],a:0,e:"V = I × R: el voltaje es corriente por resistencia."},
+{t:"fill",q:"Si V = 10 V y R = 5 Ω, ¿cuántos amperios circulan? (solo el número)",a:["2"],e:"I = V ÷ R = 10 ÷ 5 = 2 A."},
+{t:"tf",q:"Si aumenta la resistencia y el voltaje no cambia, la corriente aumenta.",a:false,e:"I = V ÷ R: más resistencia significa menos corriente."}]}]}]};
+let S={prof:null,courses:[],prog:{},board:[]},Q=null,route=location.hash||"#inicio";
+const blank=()=>({xp:0,streak:0,last_day:null,prog:{}});
+const bump=p=>{const d=today();if(p.last_day!==d){p.streak=p.last_day===yest()?p.streak+1:1;p.last_day=d}};
+const toast=m=>{const t=document.createElement("div");t.className="toast";t.setAttribute("role","status");t.textContent=m;document.body.append(t);setTimeout(()=>t.remove(),3500)};
+
+async function flush(){const q=LS("r3e_q")||[];if(!q.length||!sb)return;const rest=[];
+ for(const x of q){const {error}=await sb.rpc("complete_lesson",{p_course:x.c,p_lesson:x.l,p_score:x.s,p_total:x.t});if(error&&!/invalid/.test(error.message))rest.push(x)}
+ LS("r3e_q",rest)}
+async function load(){
+ if(!sb){const l=LS("r3e")||blank();S.prof={username:"Alumno (modo local)",role:"admin",xp:l.xp,streak:l.streak,last_day:l.last_day};S.prog=l.prog;
+  S.courses=LS("r3e_courses")||[{id:DEMO.id,data:DEMO,published:true}];return}
+ try{const {data:{session}}=await sb.auth.getSession();if(!session){S.prof=null;return}
+  await flush();
+  const [p,c,g,b]=await Promise.all([sb.from("profiles").select("*").eq("id",session.user.id).single(),sb.from("courses").select("*").order("id"),sb.from("progress").select("lesson_id,best"),sb.from("leaderboard").select("*")]);
+  if(p.error)throw p.error;S.prof=p.data;S.courses=c.data||[];S.prog=Object.fromEntries((g.data||[]).map(r=>[r.lesson_id,r.best]));S.board=b.data||[];
+  LS("r3e_cache",{p:S.prof,c:S.courses,g:S.prog,b:S.board})}
+ catch(e){const k=LS("r3e_cache");if(k){S.prof=k.p;S.courses=k.c;S.prog=k.g;S.board=k.b;toast("No se pudo conectar. Mostrando datos guardados.")}else{S.prof=null;S.err="No se pudo conectar con el servidor."}}}
+
+const flat=c=>c.data.units.flatMap(u=>u.lessons);
+const pct=c=>{const f=flat(c);return f.length?Math.round(f.filter(l=>S.prog[l.id]!==undefined).length*100/f.length):0};
+const lvl=x=>Math.floor(x/100)+1;
+const doneN=()=>Object.keys(S.prog).length;
+const ACH=[["Primera lección","Completa 1 lección",()=>doneN()>=1],["Constante","Completa 3 lecciones",()=>doneN()>=3],["Racha de 3","Estudia 3 días seguidos",()=>S.prof.streak>=3],["100 XP","Reúne 100 XP",()=>S.prof.xp>=100]];
+const lastOpen=()=>{for(const c of S.courses){const f=flat(c);const i=f.findIndex(l=>S.prog[l.id]===undefined);if(i>=0)return{c,l:f[i]}}};
+
+function render(){
+ const app=$("#app"),h=route.split("/");$("#off").hidden=navigator.onLine;
+ if(!S.prof){$("#nav").innerHTML="";$("#hs").textContent="";return authView(app)}
+ $("#hs").innerHTML=`<span title="Racha">🔥 ${S.prof.streak}</span><span title="XP">⚡ ${S.prof.xp}</span>`;
+ const tabs=[["#inicio","🏠","Inicio"],["#cursos","📚","Cursos"],["#ranking","🏆","Ranking"],["#perfil","👤","Perfil"]];if(S.prof.role==="admin")tabs.push(["#admin","🛠️","Admin"]);
+ $("#nav").innerHTML=tabs.map(t=>`<a href="${t[0]}" ${h[0]===t[0]||(h[0]==="#curso"&&t[0]==="#cursos")?'aria-current="page"':""}><span aria-hidden="true">${t[1]}</span>${t[2]}</a>`).join("");
+ if(Q&&h[0]==="#leccion")return ask(app);
+ ({"#inicio":home,"#cursos":courses,"#curso":course,"#ranking":ranking,"#perfil":profile,"#admin":admin}[h[0]]||home)(app,h[1]);
+ app.focus({preventScroll:true})}
+
+function authView(app,reg){app.innerHTML=`<div class="card pcb"><h1>${reg?"Crear cuenta":"Entrar"}</h1><p class="muted">${S.err||"Usa solo un nombre de usuario. No pedimos correo ni datos personales."}</p>
+ <label>Usuario<input type="text" id="u" autocomplete="username" autocapitalize="none" maxlength="20"></label>
+ <label>Contraseña (mínimo 6)<input type="password" id="p" autocomplete="${reg?"new-password":"current-password"}"></label>
+ <p id="er" role="alert" style="color:var(--bad)"></p>
+ <button class="btn" id="go" style="width:100%">${reg?"Registrarme":"Entrar"}</button>
+ <button class="sec" id="sw" style="width:100%;margin-top:10px">${reg?"Ya tengo cuenta":"Soy nuevo: crear cuenta"}</button></div>`;
+ $("#sw").onclick=()=>authView(app,!reg);
+ $("#go").onclick=async()=>{const u=$("#u").value.trim().toLowerCase(),p=$("#p").value;
+  if(!/^[a-z0-9_]{3,20}$/.test(u))return $("#er").textContent="Usuario: 3 a 20 letras minúsculas, números o _.";
+  if(p.length<6)return $("#er").textContent="La contraseña necesita al menos 6 caracteres.";
+  if(!sb)return $("#er").textContent="Supabase no está configurado.";
+  const email=u+"@r3e.school";$("#go").disabled=true;
+  const r=reg?await sb.auth.signUp({email,password:p,options:{data:{username:u}}}):await sb.auth.signInWithPassword({email,password:p});
+  $("#go").disabled=false;
+  if(r.error)return $("#er").textContent=/already|registered/i.test(r.error.message)?"Ese usuario ya existe.":/invalid login/i.test(r.error.message)?"Usuario o contraseña incorrectos.":"Error: "+r.error.message;
+  S.err="";await load();route="#inicio";location.hash="#inicio";render()}}
+
+function home(app){const o=lastOpen(),done=S.prof.last_day===today();
+ app.innerHTML=`<h1>Hola, ${esc(S.prof.username)} 👋</h1>
+ <div class="card"><div class="big">Nivel ${lvl(S.prof.xp)}</div><div class="bar" role="progressbar" aria-valuenow="${S.prof.xp%100}" aria-valuemax="100"><i style="width:${S.prof.xp%100}%"></i></div><p class="muted">${S.prof.xp} XP · 🔥 racha de ${S.prof.streak} día(s)</p></div>
+ <div class="card pcb"><h3>Objetivo de hoy</h3><p>${done?"✅ ¡Meta cumplida! Ya completaste una lección hoy.":"Completa 1 lección para mantener tu racha."}</p>
+ ${o?`<button class="btn" data-go="${o.c.id}|${o.l.id}" style="width:100%">Continuar: ${esc(o.l.title)}</button>`:'<p>🎉 Terminaste todo el contenido disponible.</p>'}</div>
+ <h3>Cursos</h3>${courseCards()}`;bindCourse(app);bindGo(app)}
+const courseCards=()=>S.courses.length?`<div class="grid">${S.courses.map(c=>`<a class="card" style="text-decoration:none;color:inherit;display:block" href="#curso/${esc(c.id)}"><div style="font-size:2rem" aria-hidden="true">${esc(c.data.icon)}</div><h3>${esc(c.data.title)}</h3><p class="muted">${esc(c.data.desc)}</p><div class="bar"><i style="width:${pct(c)}%"></i></div><p>${pct(c)}% · ${c.data.units.length} unidades · ${pct(c)===100?"Completado":pct(c)?"En curso":"Por empezar"}</p></a>`).join("")}</div>`:'<div class="card">Aún no hay cursos publicados.</div>';
+const bindCourse=()=>{};
+function courses(app){app.innerHTML=`<h1>Cursos</h1>${courseCards()}`}
+function bindGo(app){app.querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>{const[c,l]=b.dataset.go.split("|"),C=S.courses.find(x=>x.id===c);startLesson(C,flat(C).find(x=>x.id===l))})}
+function course(app,id){const C=S.courses.find(c=>c.id===id);if(!C)return app.innerHTML='<div class="card">Curso no encontrado. <a href="#cursos">Volver</a></div>';
+ const f=flat(C);app.innerHTML=`<h1>${esc(C.data.icon)} ${esc(C.data.title)}</h1><div class="bar"><i style="width:${pct(C)}%"></i></div><p class="muted">${pct(C)}% completado</p><div class="map">${C.data.units.map((u,ui)=>`<div class="unit"><b>${esc(u.title)}</b></div>`+u.lessons.map((l,li)=>{const i=f.indexOf(l),d=S.prog[l.id]!==undefined,ok=i===0||S.prog[f[i-1].id]!==undefined,st=d?"done":ok?"open":"lock";
+  return `<button class="node ${st}" ${ok?"":"disabled"} data-go="${esc(C.id)}|${esc(l.id)}" style="margin-left:${Math.round(Math.sin(i*1.3)*60)}px" aria-label="${esc(l.title)}: ${d?"completada":ok?"disponible":"bloqueada"}">${d?"✓":ok?"▶":"🔒"}<small>${i+1}</small></button><span class="muted" style="margin-top:-8px">${esc(l.title)}</span>`}).join("")).join("")}</div>`;bindGo(app)}
+
+function startLesson(c,l){Q={c,l,i:0,ok:0,bad:[],qs:l.questions};route="#leccion";render()}
+const shuf=a=>[...a].map(x=>[Math.random(),x]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+const norm=s=>String(s).trim().toLowerCase().replace(/\s+/g," ");
+function ask(app){const q=Q.qs[Q.i];Q.sel=null;Q.pick=[];Q.chk=false;
+ let b="";if(q.t==="mc")b=q.o.map((x,i)=>`<button class="opt" data-i="${i}">${esc(x)}</button>`).join("");
+ else if(q.t==="tf")b=["Verdadero","Falso"].map((x,i)=>`<button class="opt" data-i="${i}">${x}</button>`).join("");
+ else if(q.t==="fill")b=`<input type="text" id="fi" autocomplete="off" autocapitalize="none" aria-label="Tu respuesta">`;
+ else if(q.t==="order"){Q.pool=shuf(q.o);b=`<p class="muted">Toca en orden:</p><div id="pk" aria-live="polite" style="min-height:52px;border:2px dashed var(--line);border-radius:12px;padding:4px"></div><div id="pl"></div>`}
+ else if(q.t==="match"){const rs=shuf(q.p.map(x=>x[1]));b=q.p.map((x,i)=>`<label>${esc(x[0])}<select data-m="${i}"><option value="">Elige…</option>${rs.map(r=>`<option>${esc(r)}</option>`).join("")}</select></label>`).join("")}
+ app.innerHTML=`<button class="sec" id="x" style="min-height:44px">✕ Salir</button><div class="bar" style="margin:10px 0"><i style="width:${Q.i/Q.qs.length*100}%"></i></div><h2>${esc(q.q)}</h2>${b}<div id="fb"></div><button class="btn" id="ck" style="width:100%">Comprobar</button>`;
+ $("#x").onclick=()=>{Q=null;location.hash="#curso/"+route.split("/")[1]||"#cursos";route="#cursos";location.hash="#cursos";render()};
+ app.querySelectorAll(".opt").forEach(o=>o.onclick=()=>{if(Q.chk)return;Q.sel=+o.dataset.i;app.querySelectorAll(".opt").forEach(x=>x.classList.toggle("sel",x===o))});
+ const fi=$("#fi");if(fi){fi.onfocus=()=>setTimeout(()=>fi.scrollIntoView({block:"center",behavior:"smooth"}),300);fi.onkeydown=e=>{if(e.key==="Enter")$("#ck").click()}}
+ const draw=()=>{if(!$("#pk"))return;$("#pk").innerHTML=Q.pick.map((x,i)=>`<button class="chip" data-r="${i}">${esc(x)}</button>`).join("");$("#pl").innerHTML=Q.pool.filter(x=>!Q.pick.includes(x)).map(x=>`<button class="chip" data-a="${esc(x)}">${esc(x)}</button>`).join("");
+  app.querySelectorAll("[data-r]").forEach(b=>b.onclick=()=>{if(Q.chk)return;Q.pick.splice(+b.dataset.r,1);draw()});app.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{if(Q.chk)return;Q.pick.push(Q.pool.find(p=>esc(p)===b.dataset.a||p===b.dataset.a));draw()})};draw();
+ $("#ck").onclick=()=>{if(Q.chk){Q.i++;return Q.i<Q.qs.length?ask(app):finish(app)}
+  let ok,mine;
+  if(q.t==="mc"||q.t==="tf"){if(Q.sel===null)return toast("Elige una respuesta.");ok=q.t==="mc"?Q.sel===q.a:Q.sel===(q.a?0:1)}
+  else if(q.t==="fill"){if(!fi.value.trim())return toast("Escribe tu respuesta.");ok=q.a.map(norm).includes(norm(fi.value))}
+  else if(q.t==="order"){if(Q.pick.length<q.o.length)return toast("Coloca todos los elementos.");ok=Q.pick.every((x,i)=>x===q.o[i])}
+  else{const s=[...app.querySelectorAll("select")];if(s.some(x=>!x.value))return toast("Completa todas las relaciones.");ok=s.every((x,i)=>x.value===q.p[i][1])}
+  Q.chk=true;if(ok)Q.ok++;else Q.bad.push(q.q);
+  if(q.t==="mc"||q.t==="tf"){const c=q.t==="mc"?q.a:(q.a?0:1);app.querySelectorAll(".opt").forEach((x,i)=>{x.classList.remove("sel");if(i===c)x.classList.add("good");else if(i===Q.sel)x.classList.add("wrong")})}
+  $("#fb").innerHTML=`<div class="fb ${ok?"good":"wrong"}" role="status">${ok?"✅ ¡Correcto!":"❌ Incorrecto."} ${esc(q.e||"")}${!ok&&q.t==="fill"?" Respuesta: "+esc(q.a[0]):""}${!ok&&q.t==="order"?" Orden correcto: "+esc(q.o.join(" → ")):""}</div>`;
+  $("#ck").textContent=Q.i+1<Q.qs.length?"Continuar":"Ver resultado";$("#ck").scrollIntoView({block:"nearest"})}}
+
+async function finish(app){const {c,l,ok,qs,bad}=Q,first=S.prog[l.id]===undefined,tot=qs.length;let gained=first?10+2*ok:0,synced=true;
+ if(!sb){const x=LS("r3e")||blank();x.prog[l.id]=Math.max(x.prog[l.id]||0,Math.round(ok*100/tot));x.xp+=gained;bump(x);LS("r3e",x);S.prof={...S.prof,xp:x.xp,streak:x.streak,last_day:x.last_day};S.prog=x.prog}
+ else{const {data,error}=await sb.rpc("complete_lesson",{p_course:c.id,p_lesson:l.id,p_score:ok,p_total:tot});
+  if(error){synced=false;const q=LS("r3e_q")||[];q.push({c:c.id,l:l.id,s:ok,t:tot});LS("r3e_q",q);S.prog[l.id]=Math.max(S.prog[l.id]||0,Math.round(ok*100/tot));S.prof.xp+=gained;bump(S.prof)}
+  else{gained=data;await load()}}
+ const nx=flat(c)[flat(c).indexOf(l)+1];Q=null;
+ app.innerHTML=`<div class="card pcb"><h1>${ok===tot?"🎉 ¡Perfecto!":"Lección completada"}</h1><p class="big">${ok}/${tot} correctas</p><p>+${gained} XP ${first?"":"(ya habías completado esta lección: sin XP extra)"}</p>${synced?"":'<p class="fb wrong">⚠️ Sin conexión: guardado en este dispositivo, aún NO sincronizado. Se enviará solo al reconectar.</p>'}
+ ${bad.length?`<p><b>Para repasar:</b></p><ul>${bad.map(x=>`<li>❌ ${esc(x)}</li>`).join("")}</ul>`:"<p>✅ Sin errores.</p>"}
+ ${nx?`<button class="btn" id="nx" style="width:100%;margin-bottom:10px">Siguiente lección</button>`:""}<button class="sec" id="rp" style="width:100%;margin-bottom:10px">Repetir lección</button><a href="#curso/${esc(c.id)}">Volver al mapa</a></div>`;
+ $("#hs").innerHTML=`<span>🔥 ${S.prof.streak}</span><span>⚡ ${S.prof.xp}</span>`;
+ if(nx)$("#nx").onclick=()=>startLesson(c,nx);$("#rp").onclick=()=>startLesson(c,l);route="#curso/"+c.id;history.replaceState(null,"","#curso/"+c.id)}
+
+function ranking(app){app.innerHTML=`<h1>Clasificación</h1>${sb?`<div class="card">${S.board.length?`<ol>${S.board.map(r=>`<li>${esc(r.username)} — ${r.xp} XP</li>`).join("")}</ol>`:"Aún no hay datos."}<label><input type="checkbox" id="sb" ${S.prof.show_board!==false?"checked":""}> Aparecer en la clasificación</label></div>`:'<div class="card">La clasificación necesita Supabase (varios usuarios). En modo local no hay datos que mostrar.</div>'}`;
+ const c=$("#sb");if(c)c.onchange=async()=>{await sb.rpc("set_board",{b:c.checked});S.prof.show_board=c.checked;toast(c.checked?"Apareces en la clasificación.":"Ya no apareces.")}}
+function profile(app){app.innerHTML=`<h1>${esc(S.prof.username)}</h1><div class="grid"><div class="card"><div class="big">Nivel ${lvl(S.prof.xp)}</div>${S.prof.xp} XP</div><div class="card"><div class="big">🔥 ${S.prof.streak}</div>días de racha</div><div class="card"><div class="big">${doneN()}</div>lecciones completadas</div></div>
+ <h3>Progreso por curso</h3>${S.courses.map(c=>`<div class="card"><b>${esc(c.data.title)}</b> · ${pct(c)}%<div class="bar"><i style="width:${pct(c)}%"></i></div></div>`).join("")}
+ <h3>Logros</h3>${ACH.map(a=>`<div class="card">${a[2]()?"🏅 ":"🔒 "}<b>${a[0]}</b> — ${a[1]} <span class="muted">(${a[2]()?"obtenido":"pendiente"})</span></div>`).join("")}
+ <button class="sec" id="lo">Cerrar sesión</button>`;
+ $("#lo").onclick=async()=>{if(sb){await sb.auth.signOut();LS("r3e_cache",null)}S.prof=null;location.hash="#inicio";render()}}
+
+function admin(app){if(S.prof.role!=="admin")return app.innerHTML='<div class="card">No tienes permiso.</div>';
+ app.innerHTML=`<h1>Administración</h1><p class="muted">${sb?"El servidor solo acepta cambios de administradores.":"Modo local: los cambios se guardan en este navegador."}</p>
+ <div class="card"><label>Curso<select id="cs">${S.courses.map(c=>`<option value="${esc(c.id)}">${esc(c.data.title)}</option>`).join("")}<option value="">+ Nuevo curso</option></select></label>
+ <label>JSON (materia → unidades → lecciones → preguntas)<textarea id="js" spellcheck="false"></textarea></label>
+ <label><input type="checkbox" id="pub" checked> Publicado</label><p id="ae" role="alert" style="color:var(--bad)"></p>
+ <button class="btn" id="sv">Guardar</button> <button class="sec" id="dl" style="margin-left:8px">Eliminar</button></div>`;
+ const fillE=()=>{const c=S.courses.find(x=>x.id===$("#cs").value);$("#js").value=JSON.stringify(c?c.data:{id:"nueva-materia",title:"Nueva materia",icon:"📘",desc:"",units:[{title:"Unidad 1",lessons:[{id:"n1",title:"Lección 1",questions:[{t:"mc",q:"Pregunta",o:["A","B"],a:0,e:"Explicación"}]}]}]},null,1);$("#pub").checked=c?c.published:false};
+ $("#cs").onchange=fillE;fillE();
+ const persist=async(del)=>{let d;try{d=JSON.parse($("#js").value)}catch{return $("#ae").textContent="El JSON no es válido."}
+  if(!d.id||!d.title||!Array.isArray(d.units))return $("#ae").textContent="Faltan id, title o units.";
+  if(!sb){let l=S.courses.filter(c=>c.id!==d.id);if(!del)l.push({id:d.id,data:d,published:$("#pub").checked});LS("r3e_courses",l);S.courses=l}
+  else{const r=del?await sb.from("courses").delete().eq("id",$("#cs").value):await sb.from("courses").upsert({id:d.id,data:d,published:$("#pub").checked});if(r.error)return $("#ae").textContent="No se pudo guardar: "+r.error.message;await load()}
+  toast(del?"Eliminado.":"Guardado.");admin(app)};
+ $("#sv").onclick=()=>persist(false);$("#dl").onclick=()=>{if(confirm("¿Eliminar este curso?"))persist(true)}}
+
+addEventListener("hashchange",()=>{route=location.hash||"#inicio";if(route!=="#leccion")Q=null;render()});
+addEventListener("online",async()=>{await flush();render()});addEventListener("offline",render);
+if("serviceWorker"in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+await load();render();
+</script></body></html>
